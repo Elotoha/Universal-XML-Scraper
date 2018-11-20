@@ -2061,19 +2061,76 @@ Func _DownloadROMXML($aRomList, $vBoucle, $vSystemID, $vSSLogin = "", $vSSPasswo
 	If Not _Check_Cancel() Then Return $aRomList
 	Local $vXMLRom = $iTEMPPath & "\" & StringRegExpReplace($aRomList[$vBoucle][2], '[\[\]/\|\:\?"\*\\<>]', "") & ".xml"
 	$aPathSplit = _PathSplit($aRomList[$vBoucle][0], $sDrive, $sDir, $sFileName, $sExtension)
+
+	; DEBUG 20/11/2018
+	$vFound = False
+	_LOG("Path Split A:" & $aRomList[$vBoucle][0] & " $sDrive:" & $sDrive & " $sDir=" & $sDir & " $sFileName=" & $sFileName & " $sExtension=" & $sExtension, 0, $iLOGPath)
+
+	; First search : Name + Version + Extension : AdvancedSkiSimulator_v%31.%31_%30%30%39%34.lha
 	$vRomName = _URIEncode($sFileName & $sExtension)
-	If $vScrapeSearchMode = 0 Or $vScrapeSearchMode = 1 Then $aRomList[$vBoucle][8] = _DownloadWRetry($iURLScraper & "api/jeuInfos.php?devid=" & $iDevId & "&devpassword=" & $iDevPassword & "&softname=" & $iSoftname & "&output=xml&ssid=" & $vSSLogin & "&sspassword=" & BinaryToString(_Crypt_DecryptData($vSSPassword, "1gdf1g1gf", $CALG_RC4)) & "&crc=" & $aRomList[$vBoucle][5] & "&md5=" & $aRomList[$vBoucle][6] & "&sha1=" & $aRomList[$vBoucle][7] & "&systemeid=" & $vSystemID & "&romtype=rom&romnom=" & $vRomName & "&romtaille=" & $aRomList[$vBoucle][4] & $vForceUpdate, $vXMLRom)
-	If StringInStr(FileReadLine($aRomList[$vBoucle][8]), "API") Or (StringInStr(FileReadLine($aRomList[$vBoucle][8]), "Erreur") Or Not FileExists($aRomList[$vBoucle][8])) Then
-		$vRomName = _URIEncode($sFileName)
-		If $vScrapeSearchMode = 0 Or $vScrapeSearchMode = 2 Then $aRomList[$vBoucle][8] = _DownloadWRetry($iURLScraper & "api/jeuInfos.php?devid=" & $iDevId & "&devpassword=" & $iDevPassword & "&softname=" & $iSoftname & "&output=xml&ssid=" & $vSSLogin & "&sspassword=" & BinaryToString(_Crypt_DecryptData($vSSPassword, "1gdf1g1gf", $CALG_RC4)) & "&crc=&md5=&sha1=&systemeid=" & $vSystemID & "&romtype=rom&romnom=" & $vRomName & "&romtaille=" & $aRomList[$vBoucle][4] & $vForceUpdate, $vXMLRom)
+	If Not $vFound And ($vScrapeSearchMode = 0 Or $vScrapeSearchMode = 1) Then
+		$aRomList[$vBoucle][8] = _DownloadWRetry($iURLScraper & "api/jeuInfos.php?devid=" & $iDevId & "&devpassword=" & $iDevPassword & "&softname=" & $iSoftname & "&output=xml&ssid=" & $vSSLogin & "&sspassword=" & BinaryToString(_Crypt_DecryptData($vSSPassword, "1gdf1g1gf", $CALG_RC4)) & "&crc=" & $aRomList[$vBoucle][5] & "&md5=" & $aRomList[$vBoucle][6] & "&sha1=" & $aRomList[$vBoucle][7] & "&systemeid=" & $vSystemID & "&romtype=rom&romnom=" & $vRomName & "&romtaille=" & $aRomList[$vBoucle][4] & $vForceUpdate, $vXMLRom)
 		If StringInStr(FileReadLine($aRomList[$vBoucle][8]), "API") Or (StringInStr(FileReadLine($aRomList[$vBoucle][8]), "Erreur") Or Not FileExists($aRomList[$vBoucle][8])) Then
-			FileDelete($aRomList[$vBoucle][8])
-			$aRomList[$vBoucle][8] = ""
-			$aRomList[$vBoucle][9] = 0
-;~ 			_ProgressSetImages($PB_SCRAPE, $iScriptPath & "\Ressources\Images\ProgressBar\yellow.jpg", $iScriptPath & "\Ressources\Images\ProgressBar\bg.jpg")
-			Return $aRomList
+			$vFound = False
+		Else
+			$vFound = True
 		EndIf
 	EndIf
+
+	; Second search : Name + Version (NoCRC) : AdvancedSkiSimulator_v%31.%31_%30%30%39%34
+	If Not $vFound And ($vScrapeSearchMode = 0 Or $vScrapeSearchMode = 2) Then
+		$vRomName = _URIEncode($sFileName)
+		$aRomList[$vBoucle][8] = _DownloadWRetry($iURLScraper & "api/jeuInfos.php?devid=" & $iDevId & "&devpassword=" & $iDevPassword & "&softname=" & $iSoftname & "&output=xml&ssid=" & $vSSLogin & "&sspassword=" & BinaryToString(_Crypt_DecryptData($vSSPassword, "1gdf1g1gf", $CALG_RC4)) & "&crc=&md5=&sha1=&systemeid=" & $vSystemID & "&romtype=rom&romnom=" & $vRomName & "&romtaille=" & $aRomList[$vBoucle][4] & $vForceUpdate, $vXMLRom)
+		If StringInStr(FileReadLine($aRomList[$vBoucle][8]), "API") Or (StringInStr(FileReadLine($aRomList[$vBoucle][8]), "Erreur") Or Not FileExists($aRomList[$vBoucle][8])) Then
+			$vFound = False
+		Else
+			$vFound = True
+		EndIf
+	EndIf
+
+	; Third search : Name (NoCRC) : AdvancedSkiSimulator
+	$vPos = StringInStr($sFileName, "_")
+	If Not $vFound And $vPos > 1 And ($vScrapeSearchMode = 0 Or $vScrapeSearchMode = 2) Then
+
+		$vTmpFileNameOnly = StringMid($sFileName, 1, $vPos - 1)
+
+		$vRomName = _URIEncode($vTmpFileNameOnly)
+		$aRomList[$vBoucle][8] = _DownloadWRetry($iURLScraper & "api/jeuInfos.php?devid=" & $iDevId & "&devpassword=" & $iDevPassword & "&softname=" & $iSoftname & "&output=xml&ssid=" & $vSSLogin & "&sspassword=" & BinaryToString(_Crypt_DecryptData($vSSPassword, "1gdf1g1gf", $CALG_RC4)) & "&crc=&md5=&sha1=&systemeid=" & $vSystemID & "&romtype=rom&romnom=" & $vRomName & "&romtaille=" & $aRomList[$vBoucle][4] & $vForceUpdate, $vXMLRom)
+		If StringInStr(FileReadLine($aRomList[$vBoucle][8]), "API") Or (StringInStr(FileReadLine($aRomList[$vBoucle][8]), "Erreur") Or Not FileExists($aRomList[$vBoucle][8])) Then
+			$vFound = False
+
+			; Fourth search: Name without trailing numbers (NoCRC) : AlienBreedTowerAssault11 -> AlienBreedTowerAssault
+			; BadCode : I am a beginner in AutoIt
+			$vTmp = $vTmpFileNameOnly
+			While StringLen($vTmp) > 1
+				$LastChar = StringMid($vTmp, StringLen($vTmp), 1)
+				If $LastChar < "0" Or $LastChar > "9" Then
+					ExitLoop
+				EndIf
+				$vTmp = StringMid($vTmp, 1, StringLen($vTmp) - 1)
+			WEnd
+			If StringLen($vTmp) > 1 And StringLen($vTmp) < StringLen($vTmpFileNameOnly) Then
+				$vRomName = _URIEncode($vTmp)
+				$aRomList[$vBoucle][8] = _DownloadWRetry($iURLScraper & "api/jeuInfos.php?devid=" & $iDevId & "&devpassword=" & $iDevPassword & "&softname=" & $iSoftname & "&output=xml&ssid=" & $vSSLogin & "&sspassword=" & BinaryToString(_Crypt_DecryptData($vSSPassword, "1gdf1g1gf", $CALG_RC4)) & "&crc=&md5=&sha1=&systemeid=" & $vSystemID & "&romtype=rom&romnom=" & $vRomName & "&romtaille=" & $aRomList[$vBoucle][4] & $vForceUpdate, $vXMLRom)
+				If StringInStr(FileReadLine($aRomList[$vBoucle][8]), "API") Or (StringInStr(FileReadLine($aRomList[$vBoucle][8]), "Erreur") Or Not FileExists($aRomList[$vBoucle][8])) Then
+					$vFound = False
+				Else
+					$vFound = True
+				EndIf
+			EndIf
+		Else
+			$vFound = True
+		EndIf
+	EndIf
+
+	If Not $vFound Then
+		FileDelete($aRomList[$vBoucle][8])
+		$aRomList[$vBoucle][8] = ""
+		$aRomList[$vBoucle][9] = 0
+;~ 			_ProgressSetImages($PB_SCRAPE, $iScriptPath & "\Ressources\Images\ProgressBar\yellow.jpg", $iScriptPath & "\Ressources\Images\ProgressBar\bg.jpg")
+		Return $aRomList
+	EndIf
+
 ;~ 	_ProgressSetImages($PB_SCRAPE, $iScriptPath & "\Ressources\Images\ProgressBar\green.jpg", $iScriptPath & "\Ressources\Images\ProgressBar\bg.jpg")
 	$aRomList[$vBoucle][9] = 1
 	Return $aRomList
@@ -2498,6 +2555,8 @@ Func _SCRAPE($oXMLProfil, $aScrapeEngine, $vNbThread = 1, $vFullScrape = 0)
 
 						If ($aRomList[$vBoucle][9] = 1 Or $vMissingRom_Mode = 1 Or $aRomList[$vBoucle][3] > 1) And _Check_Cancel() Then
 
+							$vNotReadyLogged = 0
+
 							$vEngineReady = 0
 							While $vEngineReady < 1
 								$vEngineReady = 0
@@ -2509,7 +2568,10 @@ Func _SCRAPE($oXMLProfil, $aScrapeEngine, $vNbThread = 1, $vFullScrape = 0)
 										_LOG("-Engine Number " & $vEngineReady & " Ready", 1, $iLOGPath)
 									Else
 										GUICtrlSetState($R_Engine[$bEngine], $GUI_CHECKED)
-										_LOG("-Engine Number " & $bEngine & " NOT Ready", 1, $iLOGPath)
+										If $vNotReadyLogged = 0 Then
+											_LOG("-Engine Number " & $bEngine & " NOT Ready", 1, $iLOGPath)
+											$vNotReadyLogged = 1
+										EndIf
 									EndIf
 								Next
 								If Not _Check_Cancel() Then ExitLoop

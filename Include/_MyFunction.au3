@@ -422,13 +422,14 @@ EndFunc   ;==>_Download
 ; Related .......:
 ; Link ..........;
 ; Example .......; No
-Func _DownloadWRetry($iURL, $iPath, $iRetry = 3, $iTimeOut = 50, $iCRC = Default)
+Func _DownloadWRetry($iURL, $iPath, $iRetry = 2, $iTimeOut = 50, $iCRC = Default)
 	Local $iCount = 0, $iResult = -1, $vTimer = TimerInit()
 	While $iResult < 0 And $iCount < $iRetry
 		$iCount = $iCount + 1
 		$iResult = _Download($iURL, $iPath, $iTimeOut, $iCRC)
 	WEnd
-	_LOG("-In " & $iCount & " try and " & Round((TimerDiff($vTimer) / 1000), 2) & "s", 1, $iLOGPath)
+	$vTmp = ($iResult < 0)?"FAIL("& $iResult &")":"SUCCESS"
+	_LOG("- _DownloadWRetry " & $vTmp & " In " & $iCount & " try and " & Round((TimerDiff($vTimer) / 1000), 2) & "s", 1, $iLOGPath)
 	Return $iResult
 EndFunc   ;==>_DownloadWRetry
 
