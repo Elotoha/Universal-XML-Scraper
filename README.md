@@ -20,6 +20,8 @@ I saw that LHA support was already requested in Amiberry comments section.
 
 So I decided to try to add LHA support for Universal XML Scraper, and it is now done ! :-)
 
+This part is commited in Master and was generated as a "pull request" toward main authors "Universal-Rom-Tools".
+
 
 Multiple requests:
 -----------------
@@ -31,3 +33,5 @@ So I'd like to perform a first try with full name, and if not found, perform a s
 Finally, we do few tries with less and less precision.
 
 The goal is to match the most precise ROM info, but not to let a ROM without any data if possible.
+
+This part is in development in a specific branch.
