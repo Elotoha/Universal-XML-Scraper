@@ -2,6 +2,9 @@
 Rom Scraper Forked from Universal-Rom-Tools/Universal-XML-Scraper and just improved a little bit for my Amiga needs.
 
 I just needed to improve Universal-XML-Scraper for Amiga ROMs.
+
+LHA:
+----
 I have a collection of WHDLoad ROMs, but almost every ROM is compacted in ZIP format, which is not supported by Amiberry.
 Thus I converted ZIP to LHA (with a batch on Windows).
 Amiberry works with LHA, but Scrapers don't work anymore !
@@ -17,7 +20,14 @@ I saw that LHA support was already requested in Amiberry comments section.
 
 So I decided to try to add LHA support for Universal XML Scraper, and it is now done ! :-)
 
-We could improve it to find more games : 
+
+Multiple requests:
+-----------------
+I knew we could improve it to find more games : 
 I noticed that sometimes game is not found because the complete name with "MyGame_V2.555_45454" was requested and not found, 
 so I manually tried without this part, only "MyGame", then the game was found. 
 So I'd like to perform a first try with full name, and if not found, perform a second one without version and other data part.
+
+Finally, we do few tries with less and less precision.
+
+The goal is to match the most precise ROM info, but not to let a ROM without any data if possible.
